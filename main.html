@@ -352,8 +352,8 @@ function closePopup(id) {
     const announcementsList = document.getElementById("announcementsList");
 
     const announcementsQuery = query(
-        collection(db, "announcements"),
-        orderBy("sortTimestamp", "desc")
+        collection(db, "siteAnnouncements"),
+        orderBy("createdAt", "desc")
     );
 
     onSnapshot(announcementsQuery, snapshot => {
@@ -371,9 +371,9 @@ function closePopup(id) {
             item.className = "calendar-day";
 
             item.innerHTML = `
-                <div class="calendar-date">${data.date}</div>
+                <div class="calendar-date">${new Date(data.createdAt).toLocaleDateString()}</div>
                 <div class="calendar-field"><strong>${data.title}</strong></div>
-                <div class="calendar-field">${data.extra || data.body || ""}</div>
+                <div class="calendar-field">${data.message}</div>
             `;
 
             announcementsList.appendChild(item);
@@ -390,8 +390,8 @@ function closePopup(id) {
     let dismissClicks = 0;
 
     const latestQuery = query(
-        collection(db, "announcements"),
-        orderBy("sortTimestamp", "desc"),
+        collection(db, "siteAnnouncements"),
+        orderBy("createdAt", "desc"),
         limit(1)
     );
 
@@ -401,7 +401,7 @@ function closePopup(id) {
         const data = snapshot.docs[0].data();
 
         noticeTitle.textContent = data.title || "Announcement";
-        noticeMessage.textContent = data.extra || data.body || "";
+        noticeMessage.textContent = data.message || "";
 
         noticeBox.style.display = "flex";
     });
