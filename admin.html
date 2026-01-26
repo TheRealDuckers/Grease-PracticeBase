@@ -2,36 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Grease Admin</title>
+<title>Grease Admin Panel</title>
 
 <style>
     body {
         background: #f4f4f9;
         font-family: Arial Black, sans-serif;
         margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-        padding: 30px 10px;
+        padding: 20px;
         color: #2a2a2a;
     }
+
+    h1 {
+        color: #da291c;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
     .admin-wrapper {
         display: flex;
-        gap: 20px;
-        max-width: 1100px;
-        width: 100%;
+        gap: 25px;
+        max-width: 1300px;
+        margin: auto;
     }
-    .admin-box, .list-box {
+
+    .panel {
+        flex: 1;
         background: white;
         padding: 20px;
         border-radius: 15px;
         border: 4px solid #2a2a2a;
-        flex: 1;
-        box-sizing: border-box;
     }
-    h2 { color: #da291c; margin-top: 0; }
-    label { display: block; margin-top: 10px; font-size: 0.9rem; }
+
+    h2 {
+        margin-top: 0;
+        color: #da291c;
+    }
+
+    label {
+        display: block;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+
     input, textarea {
         width: 100%;
         padding: 8px;
@@ -42,7 +55,12 @@
         font-size: 0.95rem;
         box-sizing: border-box;
     }
-    textarea { min-height: 70px; resize: vertical; }
+
+    textarea {
+        min-height: 70px;
+        resize: vertical;
+    }
+
     button {
         margin-top: 15px;
         padding: 8px 14px;
@@ -53,73 +71,99 @@
         font-size: 0.95rem;
         cursor: pointer;
     }
-    button:hover { background: #b71f15; }
-    .status { margin-top: 10px; font-size: 0.9rem; }
-    .link { margin-top: 10px; font-size: 0.9rem; }
-    .link a { color: #da291c; text-decoration: none; }
 
-    .announcement-row {
-        border-bottom: 1px solid #ddd;
-        padding: 8px 0;
-        font-size: 0.9rem;
+    button:hover {
+        background: #b71f15;
     }
-    .announcement-row-title {
+
+    .list-item {
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+    }
+
+    .list-title {
         font-weight: bold;
     }
-    .announcement-row-meta {
-        font-size: 0.8rem;
+
+    .list-meta {
+        font-size: 0.85rem;
         color: #555;
     }
-    .row-buttons {
-        margin-top: 5px;
-    }
+
     .row-buttons button {
         margin-right: 5px;
         padding: 5px 10px;
         font-size: 0.8rem;
     }
+
+    .status {
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
 </style>
 </head>
 
 <body>
+
+<h1>Grease Admin Panel</h1>
+
 <div class="admin-wrapper">
-    <div class="admin-box">
-        <h2>Grease Admin</h2>
-        <p>Create or edit a cast announcement.</p>
 
-        <label for="title">Title</label>
-        <input id="title" type="text" placeholder="e.g. Dance Rehearsal">
+    <!-- REHEARSAL SCHEDULE PANEL -->
+    <div class="panel">
+        <h2>Rehearsal Schedule</h2>
 
-        <label for="date">Date (dd/mm/yyyy)</label>
-        <input id="date" type="text" placeholder="e.g. 12/02/2025">
+        <label>Title</label>
+        <input id="sch_title">
 
-        <label for="time">Time (text)</label>
-        <input id="time" type="text" placeholder="e.g. 3:30–5:00 PM">
+        <label>Date (dd/mm/yyyy)</label>
+        <input id="sch_date">
 
-        <label for="who">Who is needed</label>
-        <input id="who" type="text" placeholder="e.g. Pink Ladies, T-Birds">
+        <label>Time</label>
+        <input id="sch_time">
 
-        <label for="extra">Extra info (optional)</label>
-        <textarea id="extra" placeholder="Any extra notes..."></textarea>
+        <label>Who is needed</label>
+        <input id="sch_who">
 
-        <button id="createBtn">Save Announcement</button>
-        <button id="clearBtn" type="button" style="background:#555;">Clear Form</button>
+        <label>Extra info</label>
+        <textarea id="sch_extra"></textarea>
 
-        <div class="status" id="status"></div>
-        <div class="link"><a href="main.html">Back to dashboard</a></div>
+        <button id="sch_saveBtn">Save</button>
+        <button id="sch_clearBtn" style="background:#555;">Clear</button>
+
+        <div class="status" id="sch_status"></div>
+
+        <h3>Existing Schedule</h3>
+        <div id="scheduleList">Loading...</div>
     </div>
 
-    <div class="list-box">
-        <h2>Existing Announcements</h2>
-        <div id="listContainer">Loading...</div>
+    <!-- ANNOUNCEMENTS PANEL -->
+    <div class="panel">
+        <h2>Announcements</h2>
+
+        <label>Title</label>
+        <input id="ann_title">
+
+        <label>Message</label>
+        <textarea id="ann_message"></textarea>
+
+        <button id="ann_saveBtn">Save</button>
+        <button id="ann_clearBtn" style="background:#555;">Clear</button>
+
+        <div class="status" id="ann_status"></div>
+
+        <h3>Existing Announcements</h3>
+        <div id="annList">Loading...</div>
     </div>
+
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-    import { 
-        getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc 
+    import {
+        getFirestore, collection, addDoc, updateDoc, deleteDoc,
+        doc, onSnapshot, query, orderBy
     } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -138,144 +182,221 @@
 
     const ADMIN_EMAIL = "grease-admin@duckers.dev";
 
-    const titleEl = document.getElementById('title');
-    const dateEl = document.getElementById('date');
-    const timeEl = document.getElementById('time');
-    const whoEl = document.getElementById('who');
-    const extraEl = document.getElementById('extra');
-    const statusEl = document.getElementById('status');
-    const listContainer = document.getElementById('listContainer');
-    const createBtn = document.getElementById('createBtn');
-    const clearBtn = document.getElementById('clearBtn');
-
-    let editingId = null; // null = create, not edit
-
     onAuthStateChanged(auth, user => {
-        if (!user) {
+        if (!user || user.email !== ADMIN_EMAIL) {
             window.location.href = "index.html";
-        } else if (user.email !== ADMIN_EMAIL) {
-            window.location.href = "main.html";
         }
     });
 
+    /* -------------------------
+       UTIL: Build sort timestamp
+    -------------------------- */
     function buildSortTimestamp(dateText) {
         const [dd, mm, yyyy] = dateText.split("/").map(Number);
-        if (!dd || !mm || !yyyy) return Date.now();
         return new Date(yyyy, mm - 1, dd).getTime();
     }
 
-    function clearForm() {
-        editingId = null;
-        titleEl.value = "";
-        dateEl.value = "";
-        timeEl.value = "";
-        whoEl.value = "";
-        extraEl.value = "";
-        statusEl.textContent = "Ready to create a new announcement.";
-        statusEl.style.color = "#333";
-        createBtn.textContent = "Save Announcement";
-    }
+    /* -------------------------
+       REHEARSAL SCHEDULE CRUD
+    -------------------------- */
+    let editingScheduleId = null;
 
-    clearBtn.addEventListener('click', clearForm);
+    const sch_title = document.getElementById("sch_title");
+    const sch_date = document.getElementById("sch_date");
+    const sch_time = document.getElementById("sch_time");
+    const sch_who = document.getElementById("sch_who");
+    const sch_extra = document.getElementById("sch_extra");
+    const sch_status = document.getElementById("sch_status");
+    const scheduleList = document.getElementById("scheduleList");
 
-    createBtn.addEventListener('click', async () => {
-        const title = titleEl.value.trim();
-        const date = dateEl.value.trim();
-        const time = timeEl.value.trim();
-        const who = whoEl.value.trim();
-        const extra = extraEl.value.trim();
+    document.getElementById("sch_clearBtn").onclick = () => {
+        editingScheduleId = null;
+        sch_title.value = "";
+        sch_date.value = "";
+        sch_time.value = "";
+        sch_who.value = "";
+        sch_extra.value = "";
+        sch_status.textContent = "Ready.";
+    };
+
+    document.getElementById("sch_saveBtn").onclick = async () => {
+        const title = sch_title.value.trim();
+        const date = sch_date.value.trim();
+        const time = sch_time.value.trim();
+        const who = sch_who.value.trim();
+        const extra = sch_extra.value.trim();
 
         if (!title || !date) {
-            statusEl.textContent = "Title and date are required.";
-            statusEl.style.color = "red";
+            sch_status.textContent = "Title and date required.";
+            sch_status.style.color = "red";
             return;
         }
 
         const sortTimestamp = buildSortTimestamp(date);
 
         try {
-            if (editingId) {
-                const ref = doc(db, "announcements", editingId);
-                await updateDoc(ref, { title, date, time, who, extra, sortTimestamp });
-                statusEl.textContent = "Announcement updated.";
+            if (editingScheduleId) {
+                await updateDoc(doc(db, "announcements", editingScheduleId), {
+                    title, date, time, who, extra, sortTimestamp
+                });
+                sch_status.textContent = "Updated.";
             } else {
                 await addDoc(collection(db, "announcements"), {
                     title, date, time, who, extra, sortTimestamp
                 });
-                statusEl.textContent = "Announcement created.";
+                sch_status.textContent = "Created.";
             }
-            statusEl.style.color = "green";
-            clearForm();
-        } catch (e) {
-            statusEl.textContent = "Error saving announcement.";
-            statusEl.style.color = "red";
+            sch_status.style.color = "green";
+        } catch {
+            sch_status.textContent = "Error saving.";
+            sch_status.style.color = "red";
         }
-    });
+    };
 
-    const q = query(
+    const scheduleQuery = query(
         collection(db, "announcements"),
         orderBy("sortTimestamp", "asc")
     );
 
-    onSnapshot(q, snapshot => {
-        if (snapshot.empty) {
-            listContainer.innerHTML = "<p>No announcements yet.</p>";
-            return;
-        }
+    onSnapshot(scheduleQuery, snapshot => {
+        scheduleList.innerHTML = "";
 
-        listContainer.innerHTML = "";
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            const row = document.createElement('div');
-            row.className = "announcement-row";
+            const row = document.createElement("div");
+            row.className = "list-item";
 
             row.innerHTML = `
-                <div class="announcement-row-title">${data.title || ""}</div>
-                <div class="announcement-row-meta">
-                    ${data.date || ""} — ${data.time || ""}<br>
-                    Who: ${data.who || ""}${data.extra ? `<br>Extra: ${data.extra}` : ""}
-                </div>
+                <div class="list-title">${data.title}</div>
+                <div class="list-meta">${data.date} — ${data.time}<br>${data.who}</div>
                 <div class="row-buttons">
-                    <button data-id="${docSnap.id}" class="edit-btn">Edit</button>
-                    <button data-id="${docSnap.id}" class="delete-btn" style="background:#555;">Delete</button>
+                    <button class="edit" data-id="${docSnap.id}">Edit</button>
+                    <button class="del" data-id="${docSnap.id}" style="background:#555;">Delete</button>
                 </div>
             `;
-            listContainer.appendChild(row);
+
+            scheduleList.appendChild(row);
         });
 
-        listContainer.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.getAttribute('data-id');
+        scheduleList.querySelectorAll(".edit").forEach(btn => {
+            btn.onclick = () => {
+                const id = btn.dataset.id;
                 const docSnap = snapshot.docs.find(d => d.id === id);
-                if (!docSnap) return;
                 const data = docSnap.data();
-                editingId = id;
-                titleEl.value = data.title || "";
-                dateEl.value = data.date || "";
-                timeEl.value = data.time || "";
-                whoEl.value = data.who || "";
-                extraEl.value = data.extra || "";
-                statusEl.textContent = "Editing existing announcement.";
-                statusEl.style.color = "#333";
-                createBtn.textContent = "Update Announcement";
-            });
+
+                editingScheduleId = id;
+                sch_title.value = data.title;
+                sch_date.value = data.date;
+                sch_time.value = data.time;
+                sch_who.value = data.who;
+                sch_extra.value = data.extra || "";
+                sch_status.textContent = "Editing...";
+            };
         });
 
-        listContainer.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-id');
-                if (!confirm("Delete this announcement?")) return;
-                try {
-                    await deleteDoc(doc(db, "announcements", id));
-                    if (editingId === id) clearForm();
-                } catch (e) {
-                    alert("Error deleting announcement.");
-                }
-            });
+        scheduleList.querySelectorAll(".del").forEach(btn => {
+            btn.onclick = async () => {
+                if (!confirm("Delete this rehearsal?")) return;
+                await deleteDoc(doc(db, "announcements", btn.dataset.id));
+            };
         });
     });
 
-    clearForm();
+    /* -------------------------
+       ANNOUNCEMENTS CRUD
+    -------------------------- */
+    let editingAnnId = null;
+
+    const ann_title = document.getElementById("ann_title");
+    const ann_message = document.getElementById("ann_message");
+    const ann_status = document.getElementById("ann_status");
+    const annList = document.getElementById("annList");
+
+    document.getElementById("ann_clearBtn").onclick = () => {
+        editingAnnId = null;
+        ann_title.value = "";
+        ann_message.value = "";
+        ann_status.textContent = "Ready.";
+    };
+
+    document.getElementById("ann_saveBtn").onclick = async () => {
+        const title = ann_title.value.trim();
+        const message = ann_message.value.trim();
+
+        if (!title || !message) {
+            ann_status.textContent = "Title and message required.";
+            ann_status.style.color = "red";
+            return;
+        }
+
+        try {
+            if (editingAnnId) {
+                await updateDoc(doc(db, "siteAnnouncements", editingAnnId), {
+                    title, message
+                });
+                ann_status.textContent = "Updated.";
+            } else {
+                await addDoc(collection(db, "siteAnnouncements"), {
+                    title,
+                    message,
+                    createdAt: Date.now()
+                });
+                ann_status.textContent = "Created.";
+            }
+            ann_status.style.color = "green";
+        } catch {
+            ann_status.textContent = "Error saving.";
+            ann_status.style.color = "red";
+        }
+    };
+
+    const annQuery = query(
+        collection(db, "siteAnnouncements"),
+        orderBy("createdAt", "desc")
+    );
+
+    onSnapshot(annQuery, snapshot => {
+        annList.innerHTML = "";
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const row = document.createElement("div");
+            row.className = "list-item";
+
+            row.innerHTML = `
+                <div class="list-title">${data.title}</div>
+                <div class="list-meta">${data.message}</div>
+                <div class="row-buttons">
+                    <button class="editAnn" data-id="${docSnap.id}">Edit</button>
+                    <button class="delAnn" data-id="${docSnap.id}" style="background:#555;">Delete</button>
+                </div>
+            `;
+
+            annList.appendChild(row);
+        });
+
+        annList.querySelectorAll(".editAnn").forEach(btn => {
+            btn.onclick = () => {
+                const id = btn.dataset.id;
+                const docSnap = snapshot.docs.find(d => d.id === id);
+                const data = docSnap.data();
+
+                editingAnnId = id;
+                ann_title.value = data.title;
+                ann_message.value = data.message;
+                ann_status.textContent = "Editing...";
+            };
+        });
+
+        annList.querySelectorAll(".delAnn").forEach(btn => {
+            btn.onclick = async () => {
+                if (!confirm("Delete this announcement?")) return;
+                await deleteDoc(doc(db, "siteAnnouncements", btn.dataset.id));
+            };
+        });
+    });
+
 </script>
+
 </body>
 </html>
