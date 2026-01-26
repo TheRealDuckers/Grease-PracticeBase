@@ -103,7 +103,7 @@
     /* ---------------- LOGIN FUNCTION ---------------- */
     document.getElementById("loginBtn").addEventListener("click", () => {
         const password = document.getElementById("passwordInput").value;
-        const email = "castportal@login.com"; // hidden login identity
+        const email = "auth@grease.practicebase"; // hidden login identity
 
         signInWithEmailAndPassword(auth, email, password)
             .then(() => {
