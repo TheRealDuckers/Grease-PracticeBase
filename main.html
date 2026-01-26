@@ -142,19 +142,50 @@
         font-weight: bold;
     }
 
-    /* Toast */
-    .toast {
+    /* Notice popup */
+    .notice-box {
         position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background: var(--grease-red);
-        color: var(--grease-white);
-        padding: 10px 20px;
-        border-radius: 999px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        display: none;
         z-index: 2000;
+        background-color: #da291c;
+        color: white;
+        border: 3px solid #2a2a2a;
+        padding: 15px 20px;
+        border-radius: 8px;
+        font-family: 'Arial Black', sans-serif;
+        text-transform: uppercase;
+        box-shadow: 5px 5px 0px #2a2a2a;
+        width: 90%;
+        max-width: 450px;
+        display: none;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        user-select: none;
+        animation: slideUp 0.5s ease-out;
+        transition: opacity 0.3s ease;
+    }
+
+    @keyframes slideUp {
+        from { bottom: -100px; opacity: 0; }
+        to { bottom: 20px; opacity: 1; }
+    }
+
+    .notice-icon { font-size: 2rem; }
+
+    .notice-content b {
+        display: block;
+        font-size: 1.1rem;
+    }
+
+    .notice-content p {
+        margin: 5px 0 0;
+        font-family: sans-serif;
+        text-transform: none;
+        font-size: 0.8rem;
+        opacity: 0.8;
     }
 </style>
 </head>
@@ -179,13 +210,13 @@
             <i class="fa-solid fa-film"></i><br>Dance Videos
         </div>
 
-        <div class="card">
-            <i class="fa-solid fa-bullhorn"></i><br>Announcements<br><small>(coming soon)</small>
+        <div class="card" onclick="openPopup('announcementsPopup')">
+            <i class="fa-solid fa-bullhorn"></i><br>Announcements
         </div>
     </div>
 </div>
 
-<!-- POPUP: SCRIPT -->
+<!-- SCRIPT POPUP -->
 <div id="scriptPopup" class="overlay">
     <div class="popup-header">
         <h2>Script</h2>
@@ -196,7 +227,7 @@
     </div>
 </div>
 
-<!-- POPUP: REHEARSAL SCHEDULE (Calendar) -->
+<!-- REHEARSAL SCHEDULE POPUP -->
 <div id="schedulePopup" class="overlay">
     <div class="popup-header">
         <h2>Rehearsal Schedule</h2>
@@ -210,7 +241,7 @@
     </div>
 </div>
 
-<!-- POPUP: VIDEOS -->
+<!-- VIDEOS POPUP -->
 <div id="videosPopup" class="overlay">
     <div class="popup-header">
         <h2>Dance Videos</h2>
@@ -221,7 +252,28 @@
     </div>
 </div>
 
-<div class="toast" id="toast">New rehearsal added</div>
+<!-- ANNOUNCEMENTS POPUP -->
+<div id="announcementsPopup" class="overlay">
+    <div class="popup-header">
+        <h2>Announcements</h2>
+        <button class="close-btn" onclick="closePopup('announcementsPopup')">&times;</button>
+    </div>
+
+    <div class="iframe-container">
+        <div class="calendar-list" id="announcementsList">
+            <p>Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- NOTICE POPUP -->
+<div class="notice-box" id="noticeBox">
+    <div class="notice-icon">📢</div>
+    <div class="notice-content">
+        <b id="noticeTitle">Announcement</b>
+        <p id="noticeMessage">Loading...</p>
+    </div>
+</div>
 
 <script>
 function openPopup(id) {
@@ -230,18 +282,13 @@ function openPopup(id) {
 function closePopup(id) {
     document.getElementById(id).classList.remove("active");
 }
-function showToast() {
-    const toast = document.getElementById('toast');
-    toast.style.display = 'block';
-    setTimeout(() => toast.style.display = 'none', 3000);
-}
 </script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
     import { 
-        getFirestore, collection, onSnapshot, query, orderBy 
+        getFirestore, collection, onSnapshot, query, orderBy, limit 
     } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -262,15 +309,17 @@ function showToast() {
         if (!user) window.location.href = "index.html";
     });
 
+    /* -------------------------
+       REHEARSAL SCHEDULE (Calendar)
+    -------------------------- */
     const calendarList = document.getElementById('calendarList');
-    let firstLoad = true;
 
-    const q = query(
+    const scheduleQuery = query(
         collection(db, "announcements"),
         orderBy("sortTimestamp", "asc")
     );
 
-    onSnapshot(q, snapshot => {
+    onSnapshot(scheduleQuery, snapshot => {
         calendarList.innerHTML = "";
 
         const today = new Date();
@@ -287,7 +336,7 @@ function showToast() {
 
             item.innerHTML = `
                 <div class="calendar-date">${data.date}</div>
-                <div class="calendar-field"><strong>Title:</strong> ${data.title}</div>
+                <div class="calendar-field"><strong>${data.title}</strong></div>
                 <div class="calendar-field"><strong>Time:</strong> ${data.time}</div>
                 <div class="calendar-field"><strong>Who:</strong> ${data.who}</div>
                 ${data.extra ? `<div class="calendar-field"><strong>Extra:</strong> ${data.extra}</div>` : ""}
@@ -295,9 +344,74 @@ function showToast() {
 
             calendarList.appendChild(item);
         });
+    });
 
-        if (!firstLoad) showToast();
-        firstLoad = false;
+    /* -------------------------
+       ANNOUNCEMENTS POPUP (Full List)
+    -------------------------- */
+    const announcementsList = document.getElementById("announcementsList");
+
+    const announcementsQuery = query(
+        collection(db, "announcements"),
+        orderBy("sortTimestamp", "desc")
+    );
+
+    onSnapshot(announcementsQuery, snapshot => {
+        announcementsList.innerHTML = "";
+
+        if (snapshot.empty) {
+            announcementsList.innerHTML = "<p>No announcements yet.</p>";
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+
+            const item = document.createElement("div");
+            item.className = "calendar-day";
+
+            item.innerHTML = `
+                <div class="calendar-date">${data.date}</div>
+                <div class="calendar-field"><strong>${data.title}</strong></div>
+                <div class="calendar-field">${data.extra || data.body || ""}</div>
+            `;
+
+            announcementsList.appendChild(item);
+        });
+    });
+
+    /* -------------------------
+       HOMEPAGE NOTICE POPUP (Newest Only)
+    -------------------------- */
+    const noticeBox = document.getElementById("noticeBox");
+    const noticeTitle = document.getElementById("noticeTitle");
+    const noticeMessage = document.getElementById("noticeMessage");
+
+    let dismissClicks = 0;
+
+    const latestQuery = query(
+        collection(db, "announcements"),
+        orderBy("sortTimestamp", "desc"),
+        limit(1)
+    );
+
+    onSnapshot(latestQuery, snapshot => {
+        if (snapshot.empty) return;
+
+        const data = snapshot.docs[0].data();
+
+        noticeTitle.textContent = data.title || "Announcement";
+        noticeMessage.textContent = data.extra || data.body || "";
+
+        noticeBox.style.display = "flex";
+    });
+
+    noticeBox.addEventListener("click", () => {
+        dismissClicks++;
+        if (dismissClicks >= 3) {
+            noticeBox.style.opacity = "0";
+            setTimeout(() => noticeBox.style.display = "none", 300);
+        }
     });
 </script>
 
