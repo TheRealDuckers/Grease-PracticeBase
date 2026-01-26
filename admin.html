@@ -332,33 +332,29 @@ document.getElementById("ann_saveBtn").onclick = async () => {
         return;
     }
 
-   try {
-    const sentBy = document.getElementById("ann_sentby").value.trim();
-
-    if (editingAnnId) {
-        await updateDoc(doc(db, "siteAnnouncements", editingAnnId), {
-            title,
-            message,
-            sentBy
-        });
-        ann_status.textContent = "Updated.";
-    } else {
-        await addDoc(collection(db, "siteAnnouncements"), {
-            title,
-            message,
-            createdAt: Date.now(),
-            sentBy
-        });
-        ann_status.textContent = "Created.";
+    try {
+        if (editingAnnId) {
+            await updateDoc(doc(db, "siteAnnouncements", editingAnnId), {
+                title,
+                message,
+                sentBy
+            });
+            ann_status.textContent = "Updated.";
+        } else {
+            await addDoc(collection(db, "siteAnnouncements"), {
+                title,
+                message,
+                createdAt: Date.now(),
+                sentBy: auth.currentUser.email
+            });
+            ann_status.textContent = "Created.";
+        }
+        ann_status.style.color = "green";
+    } catch {
+        ann_status.textContent = "Error saving.";
+        ann_status.style.color = "red";
     }
-
-    ann_status.style.color = "green";
-
-} catch (err) {
-    ann_status.textContent = "Error saving.";
-    ann_status.style.color = "red";
-}
-
+};
 
 const annQuery = query(
     collection(db, "siteAnnouncements"),
