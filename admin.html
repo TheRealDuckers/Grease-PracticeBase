@@ -159,242 +159,245 @@
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-    import {
-        getFirestore, collection, addDoc, updateDoc, deleteDoc,
-        doc, onSnapshot, query, orderBy
-    } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import {
+    getFirestore, collection, addDoc, updateDoc, deleteDoc,
+    doc, onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAecPf2aXR0j1buuDmz9MVrS8aYINs1eCU",
-        authDomain: "grease-practicebase.firebaseapp.com",
-        projectId: "grease-practicebase",
-        storageBucket: "grease-practicebase.firebasestorage.app",
-        messagingSenderId: "696484090016",
-        appId: "1:696484090016:web:4d7bfe336d842ed946b9c5",
-        measurementId: "G-4C78RPXQ99"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyAecPf2aXR0j1buuDmz9MVrS8aYINs1eCU",
+    authDomain: "grease-practicebase.firebaseapp.com",
+    projectId: "grease-practicebase",
+    storageBucket: "grease-practicebase.firebasestorage.app",
+    messagingSenderId: "696484090016",
+    appId: "1:696484090016:web:4d7bfe336d842ed946b9c5",
+    measurementId: "G-4C78RPXQ99"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    const ADMIN_EMAIL = "grease-admin@duckers.dev";
+const ADMIN_EMAIL = "grease-admin@duckers.dev";
 
-    onAuthStateChanged(auth, user => {
-        if (!user || user.email !== ADMIN_EMAIL) {
-            window.location.href = "index.html";
-        }
-    });
+onAuthStateChanged(auth, user => {
+    if (!user || user.email !== ADMIN_EMAIL) {
+        window.location.href = "index.html";
+    }
+});
 
-    /* -------------------------
-       UTIL: Build sort timestamp
-    -------------------------- */
-    function buildSortTimestamp(dateText) {
-        const [dd, mm, yyyy] = dateText.split("/").map(Number);
-        return new Date(yyyy, mm - 1, dd).getTime();
+/* -------------------------
+   UTIL: Build sort timestamp
+-------------------------- */
+function buildSortTimestamp(dateText) {
+    const [dd, mm, yyyy] = dateText.split("/").map(Number);
+    return new Date(yyyy, mm - 1, dd).getTime();
+}
+
+/* -------------------------
+   REHEARSAL SCHEDULE CRUD
+-------------------------- */
+let editingScheduleId = null;
+
+const sch_title = document.getElementById("sch_title");
+const sch_date = document.getElementById("sch_date");
+const sch_time = document.getElementById("sch_time");
+const sch_who = document.getElementById("sch_who");
+const sch_extra = document.getElementById("sch_extra");
+const sch_status = document.getElementById("sch_status");
+const scheduleList = document.getElementById("scheduleList");
+
+document.getElementById("sch_clearBtn").onclick = () => {
+    editingScheduleId = null;
+    sch_title.value = "";
+    sch_date.value = "";
+    sch_time.value = "";
+    sch_who.value = "";
+    sch_extra.value = "";
+    sch_status.textContent = "Ready.";
+};
+
+document.getElementById("sch_saveBtn").onclick = async () => {
+    const title = sch_title.value.trim();
+    const date = sch_date.value.trim();
+    const time = sch_time.value.trim();
+    const who = sch_who.value.trim();
+    const extra = sch_extra.value.trim();
+
+    if (!title || !date) {
+        sch_status.textContent = "Title and date required.";
+        sch_status.style.color = "red";
+        return;
     }
 
-    /* -------------------------
-       REHEARSAL SCHEDULE CRUD
-    -------------------------- */
-    let editingScheduleId = null;
+    const sortTimestamp = buildSortTimestamp(date);
 
-    const sch_title = document.getElementById("sch_title");
-    const sch_date = document.getElementById("sch_date");
-    const sch_time = document.getElementById("sch_time");
-    const sch_who = document.getElementById("sch_who");
-    const sch_extra = document.getElementById("sch_extra");
-    const sch_status = document.getElementById("sch_status");
-    const scheduleList = document.getElementById("scheduleList");
-
-    document.getElementById("sch_clearBtn").onclick = () => {
-        editingScheduleId = null;
-        sch_title.value = "";
-        sch_date.value = "";
-        sch_time.value = "";
-        sch_who.value = "";
-        sch_extra.value = "";
-        sch_status.textContent = "Ready.";
-    };
-
-    document.getElementById("sch_saveBtn").onclick = async () => {
-        const title = sch_title.value.trim();
-        const date = sch_date.value.trim();
-        const time = sch_time.value.trim();
-        const who = sch_who.value.trim();
-        const extra = sch_extra.value.trim();
-
-        if (!title || !date) {
-            sch_status.textContent = "Title and date required.";
-            sch_status.style.color = "red";
-            return;
+    try {
+        if (editingScheduleId) {
+            await updateDoc(doc(db, "announcements", editingScheduleId), {
+                title, date, time, who, extra, sortTimestamp
+            });
+            sch_status.textContent = "Updated.";
+        } else {
+            await addDoc(collection(db, "announcements"), {
+                title, date, time, who, extra, sortTimestamp
+            });
+            sch_status.textContent = "Created.";
         }
+        sch_status.style.color = "green";
+    } catch {
+        sch_status.textContent = "Error saving.";
+        sch_status.style.color = "red";
+    }
+};
 
-        const sortTimestamp = buildSortTimestamp(date);
+const scheduleQuery = query(
+    collection(db, "announcements"),
+    orderBy("sortTimestamp", "asc")
+);
 
-        try {
-            if (editingScheduleId) {
-                await updateDoc(doc(db, "announcements", editingScheduleId), {
-                    title, date, time, who, extra, sortTimestamp
-                });
-                sch_status.textContent = "Updated.";
-            } else {
-                await addDoc(collection(db, "announcements"), {
-                    title, date, time, who, extra, sortTimestamp
-                });
-                sch_status.textContent = "Created.";
-            }
-            sch_status.style.color = "green";
-        } catch {
-            sch_status.textContent = "Error saving.";
-            sch_status.style.color = "red";
-        }
-    };
+onSnapshot(scheduleQuery, snapshot => {
+    scheduleList.innerHTML = "";
 
-    const scheduleQuery = query(
-        collection(db, "announcements"),
-        orderBy("sortTimestamp", "asc")
-    );
+    snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const row = document.createElement("div");
+        row.className = "list-item";
 
-    onSnapshot(scheduleQuery, snapshot => {
-        scheduleList.innerHTML = "";
+        row.innerHTML = `
+            <div class="list-title">${data.title}</div>
+            <div class="list-meta">${data.date} — ${data.time}<br>${data.who}</div>
+            <div class="row-buttons">
+                <button class="edit" data-id="${docSnap.id}">Edit</button>
+                <button class="del" data-id="${docSnap.id}" style="background:#555;">Delete</button>
+            </div>
+        `;
 
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            const row = document.createElement("div");
-            row.className = "list-item";
-
-            row.innerHTML = `
-                <div class="list-title">${data.title}</div>
-                <div class="list-meta">${data.date} — ${data.time}<br>${data.who}</div>
-                <div class="row-buttons">
-                    <button class="edit" data-id="${docSnap.id}">Edit</button>
-                    <button class="del" data-id="${docSnap.id}" style="background:#555;">Delete</button>
-                </div>
-            `;
-
-            scheduleList.appendChild(row);
-        });
-
-        scheduleList.querySelectorAll(".edit").forEach(btn => {
-            btn.onclick = () => {
-                const id = btn.dataset.id;
-                const docSnap = snapshot.docs.find(d => d.id === id);
-                const data = docSnap.data();
-
-                editingScheduleId = id;
-                sch_title.value = data.title;
-                sch_date.value = data.date;
-                sch_time.value = data.time;
-                sch_who.value = data.who;
-                sch_extra.value = data.extra || "";
-                sch_status.textContent = "Editing...";
-            };
-        });
-
-        scheduleList.querySelectorAll(".del").forEach(btn => {
-            btn.onclick = async () => {
-                if (!confirm("Delete this rehearsal?")) return;
-                await deleteDoc(doc(db, "announcements", btn.dataset.id));
-            };
-        });
+        scheduleList.appendChild(row);
     });
 
-    /* -------------------------
-       ANNOUNCEMENTS CRUD
-    -------------------------- */
-    let editingAnnId = null;
-
-    const ann_title = document.getElementById("ann_title");
-    const ann_message = document.getElementById("ann_message");
-    const ann_status = document.getElementById("ann_status");
-    const annList = document.getElementById("annList");
-
-    document.getElementById("ann_clearBtn").onclick = () => {
-        editingAnnId = null;
-        ann_title.value = "";
-        ann_message.value = "";
-        ann_status.textContent = "Ready.";
-    };
-
-    document.getElementById("ann_saveBtn").onclick = async () => {
-        const title = ann_title.value.trim();
-        const message = ann_message.value.trim();
-
-        if (!title || !message) {
-            ann_status.textContent = "Title and message required.";
-            ann_status.style.color = "red";
-            return;
-        }
-
-        try {
-            if (editingAnnId) {
-                await updateDoc(doc(db, "siteAnnouncements", editingAnnId), {
-                    title, message
-                });
-                ann_status.textContent = "Updated.";
-            } else {
-                await addDoc(collection(db, "siteAnnouncements"), {
-                    title,
-                    message,
-                    createdAt: Date.now()
-                });
-                ann_status.textContent = "Created.";
-            }
-            ann_status.style.color = "green";
-        } catch {
-            ann_status.textContent = "Error saving.";
-            ann_status.style.color = "red";
-        }
-    };
-
-    const annQuery = query(
-        collection(db, "siteAnnouncements"),
-        orderBy("createdAt", "desc")
-    );
-
-    onSnapshot(annQuery, snapshot => {
-        annList.innerHTML = "";
-
-        snapshot.forEach(docSnap => {
+    scheduleList.querySelectorAll(".edit").forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+            const docSnap = snapshot.docs.find(d => d.id === id);
             const data = docSnap.data();
-            const row = document.createElement("div");
-            row.className = "list-item";
 
-            row.innerHTML = `
-                <div class="list-title">${data.title}</div>
-                <div class="list-meta">${data.message}</div>
-                <div class="row-buttons">
-                    <button class="editAnn" data-id="${docSnap.id}">Edit</button>
-                    <button class="delAnn" data-id="${docSnap.id}" style="background:#555;">Delete</button>
-                </div>
-            `;
-
-            annList.appendChild(row);
-        });
-
-        annList.querySelectorAll(".editAnn").forEach(btn => {
-            btn.onclick = () => {
-                const id = btn.dataset.id;
-                const docSnap = snapshot.docs.find(d => d.id === id);
-                const data = docSnap.data();
-
-                editingAnnId = id;
-                ann_title.value = data.title;
-                ann_message.value = data.message;
-                ann_status.textContent = "Editing...";
-            };
-        });
-
-        annList.querySelectorAll(".delAnn").forEach(btn => {
-            btn.onclick = async () => {
-                if (!confirm("Delete this announcement?")) return;
-                await deleteDoc(doc(db, "siteAnnouncements", btn.dataset.id));
-            };
-        });
+            editingScheduleId = id;
+            sch_title.value = data.title;
+            sch_date.value = data.date;
+            sch_time.value = data.time;
+            sch_who.value = data.who;
+            sch_extra.value = data.extra || "";
+            sch_status.textContent = "Editing...";
+        };
     });
+
+    scheduleList.querySelectorAll(".del").forEach(btn => {
+        btn.onclick = async () => {
+            if (!confirm("Delete this rehearsal?")) return;
+            await deleteDoc(doc(db, "announcements", btn.dataset.id));
+        };
+    });
+});
+
+/* -------------------------
+   ANNOUNCEMENTS CRUD
+-------------------------- */
+let editingAnnId = null;
+
+const ann_title = document.getElementById("ann_title");
+const ann_message = document.getElementById("ann_message");
+const ann_status = document.getElementById("ann_status");
+const annList = document.getElementById("annList");
+
+document.getElementById("ann_clearBtn").onclick = () => {
+    editingAnnId = null;
+    ann_title.value = "";
+    ann_message.value = "";
+    ann_status.textContent = "Ready.";
+};
+
+document.getElementById("ann_saveBtn").onclick = async () => {
+    const title = ann_title.value.trim();
+    const message = ann_message.value.trim();
+
+    if (!title || !message) {
+        ann_status.textContent = "Title and message required.";
+        ann_status.style.color = "red";
+        return;
+    }
+
+    try {
+        if (editingAnnId) {
+            await updateDoc(doc(db, "siteAnnouncements", editingAnnId), {
+                title,
+                message,
+                sentBy: auth.currentUser.email
+            });
+            ann_status.textContent = "Updated.";
+        } else {
+            await addDoc(collection(db, "siteAnnouncements"), {
+                title,
+                message,
+                createdAt: Date.now(),
+                sentBy: auth.currentUser.email
+            });
+            ann_status.textContent = "Created.";
+        }
+        ann_status.style.color = "green";
+    } catch {
+        ann_status.textContent = "Error saving.";
+        ann_status.style.color = "red";
+    }
+};
+
+const annQuery = query(
+    collection(db, "siteAnnouncements"),
+    orderBy("createdAt", "desc")
+);
+
+onSnapshot(annQuery, snapshot => {
+    annList.innerHTML = "";
+
+    snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const row = document.createElement("div");
+        row.className = "list-item";
+
+        row.innerHTML = `
+            <div class="list-title">${data.title}</div>
+            <div class="list-meta">${data.message}<br><em>Sent by: ${data.sentBy}</em></div>
+            <div class="row-buttons">
+                <button class="editAnn" data-id="${docSnap.id}">Edit</button>
+                <button class="delAnn" data-id="${docSnap.id}" style="background:#555;">Delete</button>
+            </div>
+        `;
+
+        annList.appendChild(row);
+    });
+
+    annList.querySelectorAll(".editAnn").forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+            const docSnap = snapshot.docs.find(d => d.id === id);
+            const data = docSnap.data();
+
+            editingAnnId = id;
+            ann_title.value = data.title;
+            ann_message.value = data.message;
+            ann_status.textContent = "Editing...";
+        };
+    });
+
+    annList.querySelectorAll(".delAnn").forEach(btn => {
+        btn.onclick = async () => {
+            if (!confirm("Delete this announcement?")) return;
+            await deleteDoc(doc(db, "siteAnnouncements", btn.dataset.id));
+        };
+    });
+});
 
 </script>
 
