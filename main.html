@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Grease Cast Hub</title>
-
-<!-- ICON CDN -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
@@ -14,7 +12,6 @@
         --grease-white: #ffffff;
         --bg-color: #f4f4f9;
     }
-
     body {
         font-family: 'Arial Black', Gadget, sans-serif;
         background-color: var(--bg-color);
@@ -25,29 +22,21 @@
         min-height: 100vh;
         color: var(--grease-black);
     }
-
     .main-container {
         width: 90%;
         max-width: 1000px;
         text-align: center;
         padding: 20px 0;
     }
-
     .container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 15px;
     }
-
     @media (max-width: 600px) {
-        .logo-text {
-            font-size: 2.5rem !important;
-        }
-        .card {
-            padding: 25px 15px !important;
-        }
+        .logo-text { font-size: 2.5rem !important; }
+        .card { padding: 25px 15px !important; }
     }
-
     .logo-container {
         margin-bottom: 30px;
         background-color: var(--grease-red);
@@ -62,7 +51,6 @@
         text-shadow: 2px 2px 0 var(--grease-black);
         margin: 0;
     }
-
     .card {
         background: var(--grease-white);
         padding: 40px 20px;
@@ -73,40 +61,30 @@
         transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
         font-size: 1.3rem;
     }
-
     .card i {
         font-size: 2.5rem;
         margin-bottom: 10px;
         color: var(--grease-red);
         transition: color 0.25s ease;
     }
-
     .card:hover {
         transform: translateY(-6px) scale(1.03);
         box-shadow: 0 8px 20px rgba(0,0,0,0.25);
         border-color: var(--grease-red);
     }
-
-    .card:hover i {
-        color: var(--grease-black);
-    }
-
+    .card:hover i { color: var(--grease-black); }
     .card:active { transform: scale(0.95); }
 
     .overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
         background: white;
         z-index: 1000;
         display: none;
         flex-direction: column;
     }
-
     .overlay.active { display: flex; }
-
     .popup-header {
         padding: 10px 20px;
         display: flex;
@@ -115,7 +93,6 @@
         background: var(--grease-black);
         color: var(--grease-white);
     }
-
     .close-btn {
         font-size: 35px;
         background: none;
@@ -123,72 +100,87 @@
         color: var(--grease-red);
         cursor: pointer;
     }
-
     .iframe-container {
         flex-grow: 1;
         position: relative;
         -webkit-overflow-scrolling: touch;
         overflow-y: auto;
     }
-
     iframe {
         width: 100%;
         height: 100%;
         border: none;
     }
-
     .loader {
         position: absolute;
-        top: 50%;
-        left: 50%;
+        top: 50%; left: 50%;
         transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
+        width: 40px; height: 40px;
         border: 4px solid #f3f3f3;
         border-top: 4px solid var(--grease-red);
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
-
     @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
     .loaded .loader { display: none; }
+
+    .announcements-list { padding: 20px; }
+    .announcement-item {
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+        text-align: left;
+    }
+    .announcement-title {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+    .announcement-field {
+        margin: 4px 0;
+        font-size: 0.95rem;
+    }
+    .announcement-field strong {
+        font-weight: bold;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--grease-red);
+        color: var(--grease-white);
+        padding: 10px 20px;
+        border-radius: 999px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        display: none;
+        z-index: 2000;
+    }
 </style>
 </head>
 
 <body>
-
 <div class="main-container">
-
     <div class="logo-container">
         <h1 class="logo-text">GREASE</h1>
     </div>
 
     <div class="container">
-
         <div class="card" onclick="openPopup('scriptPopup')">
-            <i class="fa-solid fa-book-open"></i><br>
-            Script
+            <i class="fa-solid fa-book-open"></i><br>Script
         </div>
-
         <div class="card" onclick="openPopup('schedulePopup')">
-            <i class="fa-solid fa-calendar-days"></i><br>
-            Rehearsal Schedule
+            <i class="fa-solid fa-calendar-days"></i><br>Rehearsal Schedule
         </div>
-
         <div class="card" onclick="openPopup('videosPopup')">
-            <i class="fa-solid fa-film"></i><br>
-            Dance Videos
+            <i class="fa-solid fa-film"></i><br>Dance Videos
         </div>
-
         <div class="card" onclick="openPopup('announcementsPopup')">
-            <i class="fa-solid fa-bullhorn"></i><br>
-            Announcements
+            <i class="fa-solid fa-bullhorn"></i><br>Announcements
         </div>
-
     </div>
 </div>
 
-<!-- POPUPS -->
 <div id="scriptPopup" class="overlay">
     <div class="popup-header">
         <h2>Script</h2>
@@ -227,31 +219,39 @@
         <h2>Announcements</h2>
         <button class="close-btn" onclick="closePopup('announcementsPopup')">&times;</button>
     </div>
-    <div class="iframe-container">
-        <div class="loader"></div>
-        <iframe src="about:blank" onload="hideLoader(this)"></iframe>
+    <div class="iframe-container loaded">
+        <div class="announcements-list" id="announcementsList">
+            <p>Loading announcements...</p>
+        </div>
     </div>
 </div>
+
+<div class="toast" id="toast">New cast announcement</div>
 
 <script>
 function openPopup(id) {
     document.getElementById(id).classList.add("active");
 }
-
 function closePopup(id) {
     document.getElementById(id).classList.remove("active");
 }
-
 function hideLoader(iframe) {
     iframe.parentElement.classList.add("loaded");
 }
+function showToast() {
+    const toast = document.getElementById('toast');
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 3000);
+}
 </script>
 
-<!-- FIREBASE (MODULAR SDK) -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-analytics.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+    import { 
+        getFirestore, collection, onSnapshot, query, orderBy 
+    } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAecPf2aXR0j1buuDmz9MVrS8aYINs1eCU",
@@ -266,14 +266,45 @@ function hideLoader(iframe) {
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // AUTH GUARD
     onAuthStateChanged(auth, user => {
-        if (!user) {
-            window.location.href = "index.html";
+        if (!user) window.location.href = "index.html";
+    });
+
+    const announcementsList = document.getElementById('announcementsList');
+    let firstLoad = true;
+
+    const q = query(
+        collection(db, "announcements"),
+        orderBy("sortTimestamp", "asc")
+    );
+
+    onSnapshot(q, snapshot => {
+        announcementsList.innerHTML = "";
+
+        if (snapshot.empty) {
+            announcementsList.innerHTML = "<p>No announcements yet.</p>";
+        } else {
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement('div');
+                item.className = 'announcement-item';
+
+                item.innerHTML = `
+                    <div class="announcement-title">${data.title || ""}</div>
+                    <div class="announcement-field"><strong>Date:</strong> ${data.date || ""}</div>
+                    <div class="announcement-field"><strong>Time:</strong> ${data.time || ""}</div>
+                    <div class="announcement-field"><strong>Who is needed:</strong> ${data.who || ""}</div>
+                    ${data.extra ? `<div class="announcement-field"><strong>Extra info:</strong> ${data.extra}</div>` : ""}
+                `;
+                announcementsList.appendChild(item);
+            });
         }
+
+        if (!firstLoad) showToast();
+        firstLoad = false;
     });
 </script>
-
 </body>
 </html>

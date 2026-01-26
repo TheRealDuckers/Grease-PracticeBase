@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Grease Admin</title>
+
+<style>
+    body {
+        background: #f4f4f9;
+        font-family: Arial Black, sans-serif;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        padding: 30px 10px;
+        color: #2a2a2a;
+    }
+    .admin-wrapper {
+        display: flex;
+        gap: 20px;
+        max-width: 1100px;
+        width: 100%;
+    }
+    .admin-box, .list-box {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        border: 4px solid #2a2a2a;
+        flex: 1;
+        box-sizing: border-box;
+    }
+    h2 { color: #da291c; margin-top: 0; }
+    label { display: block; margin-top: 10px; font-size: 0.9rem; }
+    input, textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border-radius: 8px;
+        border: 2px solid #2a2a2a;
+        font-family: inherit;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+    }
+    textarea { min-height: 70px; resize: vertical; }
+    button {
+        margin-top: 15px;
+        padding: 8px 14px;
+        background: #da291c;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+    button:hover { background: #b71f15; }
+    .status { margin-top: 10px; font-size: 0.9rem; }
+    .link { margin-top: 10px; font-size: 0.9rem; }
+    .link a { color: #da291c; text-decoration: none; }
+
+    .announcement-row {
+        border-bottom: 1px solid #ddd;
+        padding: 8px 0;
+        font-size: 0.9rem;
+    }
+    .announcement-row-title {
+        font-weight: bold;
+    }
+    .announcement-row-meta {
+        font-size: 0.8rem;
+        color: #555;
+    }
+    .row-buttons {
+        margin-top: 5px;
+    }
+    .row-buttons button {
+        margin-right: 5px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+</style>
+</head>
+
+<body>
+<div class="admin-wrapper">
+    <div class="admin-box">
+        <h2>Grease Admin</h2>
+        <p>Create or edit a cast announcement.</p>
+
+        <label for="title">Title</label>
+        <input id="title" type="text" placeholder="e.g. Dance Rehearsal">
+
+        <label for="date">Date (dd/mm/yyyy)</label>
+        <input id="date" type="text" placeholder="e.g. 12/02/2025">
+
+        <label for="time">Time (text)</label>
+        <input id="time" type="text" placeholder="e.g. 3:30–5:00 PM">
+
+        <label for="who">Who is needed</label>
+        <input id="who" type="text" placeholder="e.g. Pink Ladies, T-Birds">
+
+        <label for="extra">Extra info (optional)</label>
+        <textarea id="extra" placeholder="Any extra notes..."></textarea>
+
+        <button id="createBtn">Save Announcement</button>
+        <button id="clearBtn" type="button" style="background:#555;">Clear Form</button>
+
+        <div class="status" id="status"></div>
+        <div class="link"><a href="main.html">Back to dashboard</a></div>
+    </div>
+
+    <div class="list-box">
+        <h2>Existing Announcements</h2>
+        <div id="listContainer">Loading...</div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+    import { 
+        getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAecPf2aXR0j1buuDmz9MVrS8aYINs1eCU",
+        authDomain: "grease-practicebase.firebaseapp.com",
+        projectId: "grease-practicebase",
+        storageBucket: "grease-practicebase.firebasestorage.app",
+        messagingSenderId: "696484090016",
+        appId: "1:696484090016:web:4d7bfe336d842ed946b9c5",
+        measurementId: "G-4C78RPXQ99"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_EMAIL = "grease-admin@duckers.dev";
+
+    const titleEl = document.getElementById('title');
+    const dateEl = document.getElementById('date');
+    const timeEl = document.getElementById('time');
+    const whoEl = document.getElementById('who');
+    const extraEl = document.getElementById('extra');
+    const statusEl = document.getElementById('status');
+    const listContainer = document.getElementById('listContainer');
+    const createBtn = document.getElementById('createBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let editingId = null; // null = create, not edit
+
+    onAuthStateChanged(auth, user => {
+        if (!user) {
+            window.location.href = "index.html";
+        } else if (user.email !== ADMIN_EMAIL) {
+            window.location.href = "main.html";
+        }
+    });
+
+    function buildSortTimestamp(dateText) {
+        const [dd, mm, yyyy] = dateText.split("/").map(Number);
+        if (!dd || !mm || !yyyy) return Date.now();
+        return new Date(yyyy, mm - 1, dd).getTime();
+    }
+
+    function clearForm() {
+        editingId = null;
+        titleEl.value = "";
+        dateEl.value = "";
+        timeEl.value = "";
+        whoEl.value = "";
+        extraEl.value = "";
+        statusEl.textContent = "Ready to create a new announcement.";
+        statusEl.style.color = "#333";
+        createBtn.textContent = "Save Announcement";
+    }
+
+    clearBtn.addEventListener('click', clearForm);
+
+    createBtn.addEventListener('click', async () => {
+        const title = titleEl.value.trim();
+        const date = dateEl.value.trim();
+        const time = timeEl.value.trim();
+        const who = whoEl.value.trim();
+        const extra = extraEl.value.trim();
+
+        if (!title || !date) {
+            statusEl.textContent = "Title and date are required.";
+            statusEl.style.color = "red";
+            return;
+        }
+
+        const sortTimestamp = buildSortTimestamp(date);
+
+        try {
+            if (editingId) {
+                const ref = doc(db, "announcements", editingId);
+                await updateDoc(ref, { title, date, time, who, extra, sortTimestamp });
+                statusEl.textContent = "Announcement updated.";
+            } else {
+                await addDoc(collection(db, "announcements"), {
+                    title, date, time, who, extra, sortTimestamp
+                });
+                statusEl.textContent = "Announcement created.";
+            }
+            statusEl.style.color = "green";
+            clearForm();
+        } catch (e) {
+            statusEl.textContent = "Error saving announcement.";
+            statusEl.style.color = "red";
+        }
+    });
+
+    const q = query(
+        collection(db, "announcements"),
+        orderBy("sortTimestamp", "asc")
+    );
+
+    onSnapshot(q, snapshot => {
+        if (snapshot.empty) {
+            listContainer.innerHTML = "<p>No announcements yet.</p>";
+            return;
+        }
+
+        listContainer.innerHTML = "";
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const row = document.createElement('div');
+            row.className = "announcement-row";
+
+            row.innerHTML = `
+                <div class="announcement-row-title">${data.title || ""}</div>
+                <div class="announcement-row-meta">
+                    ${data.date || ""} — ${data.time || ""}<br>
+                    Who: ${data.who || ""}${data.extra ? `<br>Extra: ${data.extra}` : ""}
+                </div>
+                <div class="row-buttons">
+                    <button data-id="${docSnap.id}" class="edit-btn">Edit</button>
+                    <button data-id="${docSnap.id}" class="delete-btn" style="background:#555;">Delete</button>
+                </div>
+            `;
+            listContainer.appendChild(row);
+        });
+
+        listContainer.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const docSnap = snapshot.docs.find(d => d.id === id);
+                if (!docSnap) return;
+                const data = docSnap.data();
+                editingId = id;
+                titleEl.value = data.title || "";
+                dateEl.value = data.date || "";
+                timeEl.value = data.time || "";
+                whoEl.value = data.who || "";
+                extraEl.value = data.extra || "";
+                statusEl.textContent = "Editing existing announcement.";
+                statusEl.style.color = "#333";
+                createBtn.textContent = "Update Announcement";
+            });
+        });
+
+        listContainer.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                if (!confirm("Delete this announcement?")) return;
+                try {
+                    await deleteDoc(doc(db, "announcements", id));
+                    if (editingId === id) clearForm();
+                } catch (e) {
+                    alert("Error deleting announcement.");
+                }
+            });
+        });
+    });
+
+    clearForm();
+</script>
+</body>
+</html>
