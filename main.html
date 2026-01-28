@@ -5,6 +5,15 @@
 <title>Grease Cast Hub</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#da291c">
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js");
+  }
+</script>
+
 <style>
     :root {
         --grease-red: #da291c;
@@ -457,6 +466,7 @@ noticeBox.addEventListener("click", () => {
 
 </body>
 </html>
+
 
 
 
