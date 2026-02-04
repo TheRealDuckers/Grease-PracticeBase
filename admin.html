@@ -346,7 +346,7 @@ document.getElementById("ann_saveBtn").onclick = async () => {
                 title,
                 message,
                 createdAt: Date.now(),
-                sentBy: auth.currentUser.email
+                sentBy
             });
             ann_status.textContent = "Created.";
         }
@@ -407,4 +407,5 @@ onSnapshot(annQuery, snapshot => {
 
 </body>
 </html>
+
 
