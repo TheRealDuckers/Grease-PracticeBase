@@ -104,11 +104,11 @@
     /* ---------------- LOGIN FUNCTION ---------------- */
     document.getElementById("loginBtn").addEventListener("click", () => {
         const password = document.getElementById("passwordInput").value;
-        const email = "auth@grease.practicebase"; // hidden login identity
+        const email = "auth@grease.practicebase"; 
 
         signInWithEmailAndPassword(auth, email, password)
             .then(() => {
-                window.location.href = "https://app.practicebase.duckers.dev/auth/login";
+                window.location.href = "https://therealduckers.github.io/Grease-PracticeBase/main";
             })
             .catch(() => {
                 document.getElementById("errorBox").textContent = "Incorrect password";
