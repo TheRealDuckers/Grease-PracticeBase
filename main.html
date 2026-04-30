@@ -366,7 +366,7 @@ onSnapshot(scheduleQuery, snapshot => {
 
         item.innerHTML = `
             <div class="calendar-date">${data.date}</div>
-            <div class="calendar-field"><strong>${data.title}</strong></div>
+            <div class="calendar-date"><strong>${data.title}</strong></div>
             <div class="calendar-field"><strong>Time:</strong> ${data.time}</div>
             <div class="calendar-field"><strong>Who:</strong> ${data.who}</div>
             ${data.extra ? `<div class="calendar-field"><strong>Extra:</strong> ${data.extra}</div>` : ""}
